@@ -61,3 +61,7 @@ Status of the tests and builds: [![macOS and Linux build status](https://circlec
 Games exported with GDevelop are based on the GDevelop game engine (see `Core` and `GDJS` folders): this engine is distributed under the MIT license so that you can **distribute, sell or do anything** with the games you created with GDevelop. In particular, you are not forced to make your game open-source.
 
 [node.js]: https://nodejs.org
+
+---
+
+> **Created by Antono**
