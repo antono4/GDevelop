@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -15,6 +15,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
 
       - name: Configure Git
         run: |
