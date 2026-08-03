@@ -5,7 +5,7 @@ permissions:
 
 on:
   schedule:
-    - cron: '0 4 * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Update README with timestamp
         run: |
-          git pull --rebase origin ${ github.ref_name }
+          git pull --rebase origin ${{ github.ref_name }}
           export TZ="Asia/Jakarta"
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
           if [ -f README.md ]; then
@@ -30,4 +30,4 @@ jobs:
           fi
           git add README.md 2>/dev/null || true
           git commit -m "Auto update at $(date +'%Y-%m-%d %H:%M:%S') WIB" || echo "No changes"
-          git push origin ${ github.ref_name }
+          git push origin ${{ github.ref_name }}
