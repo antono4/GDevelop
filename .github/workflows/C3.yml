@@ -63,71 +63,95 @@ jobs:
 
       - name: Generate README content
         id: generate
+        env:
+          HAS_NPM: ${{ steps.analyze.outputs.has_npm }}
+          HAS_PYTHON: ${{ steps.analyze.outputs.has_python }}
+          TECH_PHP: ${{ steps.analyze.outputs.tech_php }}
+          HAS_DOCKER: ${{ steps.analyze.outputs.has_docker }}
+          HAS_ENV_EXAMPLE: ${{ steps.analyze.outputs.has_env_example }}
+          TECH_HTML: ${{ steps.analyze.outputs.tech_html }}
+          TECH_CSS: ${{ steps.analyze.outputs.tech_css }}
+          TECH_JS: ${{ steps.analyze.outputs.tech_js }}
+          TECH_JAVA: ${{ steps.analyze.outputs.tech_java }}
+          TECH_GO: ${{ steps.analyze.outputs.tech_go }}
+          TECH_PYTHON: ${{ steps.analyze.outputs.tech_python }}
         run: |
           REPO_NAME="${{ steps.analyze.outputs.project_name }}"
           DESCRIPTION="${{ steps.analyze.outputs.project_description }}"
           FILE_COUNT="${{ steps.analyze.outputs.file_count }}"
 
           TECH_STACK=""
-          [ "${{ steps.analyze.outputs.has_npm }}" = "true" ] && TECH_STACK="${TECH_STACK}Node.js, "
-          [ "${{ steps.analyze.outputs.tech_python }}" = "true" ] && TECH_STACK="${TECH_STACK}Python, "
-          [ "${{ steps.analyze.outputs.tech_html }}" = "true" ] && TECH_STACK="${TECH_STACK}HTML, "
-          [ "${{ steps.analyze.outputs.tech_css }}" = "true" ] && TECH_STACK="${TECH_STACK}CSS, "
-          [ "${{ steps.analyze.outputs.tech_js }}" = "true" ] && TECH_STACK="${TECH_STACK}JavaScript, "
-          [ "${{ steps.analyze.outputs.tech_java }}" = "true" ] && TECH_STACK="${TECH_STACK}Java, "
-          [ "${{ steps.analyze.outputs.tech_go }}" = "true" ] && TECH_STACK="${TECH_STACK}Go, "
-          [ "${{ steps.analyze.outputs.tech_php }}" = "true" ] && TECH_STACK="${TECH_STACK}PHP, "
-          [ "${{ steps.analyze.outputs.has_docker }}" = "true" ] && TECH_STACK="${TECH_STACK}Docker, "
+          [ "$HAS_NPM" = "true" ] && TECH_STACK="${TECH_STACK}Node.js, "
+          [ "$TECH_PYTHON" = "true" ] && TECH_STACK="${TECH_STACK}Python, "
+          [ "$TECH_HTML" = "true" ] && TECH_STACK="${TECH_STACK}HTML, "
+          [ "$TECH_CSS" = "true" ] && TECH_STACK="${TECH_STACK}CSS, "
+          [ "$TECH_JS" = "true" ] && TECH_STACK="${TECH_STACK}JavaScript, "
+          [ "$TECH_JAVA" = "true" ] && TECH_STACK="${TECH_STACK}Java, "
+          [ "$TECH_GO" = "true" ] && TECH_STACK="${TECH_STACK}Go, "
+          [ "$TECH_PHP" = "true" ] && TECH_STACK="${TECH_STACK}PHP, "
+          [ "$HAS_DOCKER" = "true" ] && TECH_STACK="${TECH_STACK}Docker, "
           TECH_STACK="${TECH_STACK%, }"
+          [ -z "$TECH_STACK" ] && TECH_STACK="Not detected"
 
           export TZ="Asia/Jakarta"
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
 
-          cat > README.md << EOF
-# $REPO_NAME
+          {
+            echo "# $REPO_NAME"
+            echo ""
+            echo "$DESCRIPTION"
+            echo ""
+            echo "## 📋 Overview"
+            echo ""
+            echo "This repository contains **$FILE_COUNT files** and is built with the following technologies:"
+            echo ""
+            echo "$TECH_STACK"
+            echo ""
+            echo "## 🚀 Quick Start"
+            echo ""
 
-$DESCRIPTION
+            if [ "$HAS_NPM" = "true" ]; then
+              echo '```bash'
+              echo 'npm install'
+              echo 'npm run dev'
+              echo 'npm run build'
+              echo '```'
+              echo ""
+            fi
 
-## 📋 Overview
+            if [ "$HAS_PYTHON" = "true" ]; then
+              echo '```bash'
+              echo 'pip install -r requirements.txt'
+              echo 'python main.py'
+              echo '```'
+              echo ""
+            fi
 
-This repository contains **$FILE_COUNT files** and is built with the following technologies:
+            if [ "$TECH_PHP" = "true" ]; then
+              echo '```bash'
+              echo 'php -S localhost:8000'
+              echo '```'
+              echo ""
+            fi
 
-$TECH_STACK
+            echo "## ✨ Features"
+            echo ""
+            [ "$HAS_DOCKER" = "true" ] && echo "- 🐳 Docker support"
+            [ "$HAS_ENV_EXAMPLE" = "true" ] && echo "- 🔧 Environment config included"
+            echo "- 📝 Auto-generated documentation"
+            echo ""
+            echo "## 🛠️ Technologies"
+            echo ""
+            echo "$TECH_STACK"
+            echo ""
+            echo "## 📄 License"
+            echo ""
+            echo "MIT License"
+            echo ""
+            echo "---"
+            echo "*Last updated: $TIMESTAMP*"
+          } > README.md
 
-## 🚀 Quick Start
-
-${{ steps.analyze.outputs.has_npm == 'true' && '```bash
-npm install
-npm run dev
-npm run build
-```' || '' }}
-
-${{ steps.analyze.outputs.has_python == 'true' && '```bash
-pip install -r requirements.txt
-python main.py
-```' || '' }}
-
-${{ steps.analyze.outputs.tech_php == 'true' && '```bash
-php -S localhost:8000
-```' || '' }}
-
-## ✨ Features
-
-${{ steps.analyze.outputs.has_docker == 'true' && '- 🐳 Docker support
-' || '' }}${{ steps.analyze.outputs.has_env_example == 'true' && '- 🔧 Environment config included
-' || '' }}- 📝 Auto-generated documentation
-
-## 🛠️ Technologies
-
-$TECH_STACK
-
-## 📄 License
-
-MIT License
-
----
-*Last updated: $TIMESTAMP*
-EOF
           echo "readme_generated=true" >> $GITHUB_OUTPUT
 
       - name: Configure Git
@@ -139,7 +163,6 @@ EOF
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git pull --rebase origin ${{ github.ref_name }}
           git add README.md
 
           if git diff --staged --quiet; then
@@ -148,6 +171,7 @@ EOF
             export TZ="Asia/Jakarta"
             COMMIT_MSG="docs: Auto-generate README at $(date +'%Y-%m-%d %H:%M:%S') WIB"
             git commit -m "$COMMIT_MSG"
+            git pull --rebase origin ${{ github.ref_name }}
             git push origin ${{ github.ref_name }}
             echo "README updated!"
           fi
