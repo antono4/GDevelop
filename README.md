@@ -1,2 +1,26 @@
-Last updated: 2026-08-23 04:00:49 WIB
-Last updated: 2026-08-23 04:08:38 WIB
+# GDevelop
+
+
+
+## 📋 Overview
+
+This repository contains **5145 files** and is built with the following technologies:
+
+JavaScript
+
+## 🚀 Quick Start
+
+## ✨ Features
+
+- 📝 Auto-generated documentation
+
+## 🛠️ Technologies
+
+JavaScript
+
+## 📄 License
+
+MIT License
+
+---
+*Last updated: 2026-08-23 04:18:31 WIB*
