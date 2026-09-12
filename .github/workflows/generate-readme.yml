@@ -223,7 +223,7 @@ jobs:
             echo ""
             echo "---"
             echo ""
-            echo "<sub>README ini di-generate otomatis pada **${TIMESTAMP}** oleh GitHub Actions `.github/workflows/generate-readme.yml`.</sub>"
+            echo "<sub>README ini di-generate otomatis pada **${TIMESTAMP}** oleh GitHub Actions \`.github/workflows/generate-readme.yml\`.</sub>"
           } > README.md
 
           echo "=== Pratinjau README ==="
