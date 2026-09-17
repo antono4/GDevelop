@@ -5,13 +5,19 @@ permissions:
 
 on:
   schedule:
-    - cron: '4-59/10 * * * *'
+    # Setiap 30 menit, offset 4 (menit 04 dan 34).
+    - cron: '4-59/30 * * * *'
   workflow_dispatch:
     inputs:
       force_regenerate:
         description: 'Force regenerate README'
         required: false
         default: 'false'
+
+concurrency:
+  # Grup yang sama dengan C1/C2 -> run mengantre, tidak saling menimpa README.
+  group: readme-updater
+  cancel-in-progress: false
 
 jobs:
   generate-readme:

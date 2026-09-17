@@ -5,8 +5,14 @@ permissions:
 
 on:
   schedule:
-    - cron: '6-59/10 * * * *'
+    # Setiap 30 menit, offset 6 (menit 06 dan 36).
+    - cron: '6-59/30 * * * *'
   workflow_dispatch:
+
+concurrency:
+  # Grup yang sama dengan C1/C2/C3 -> run mengantre, tidak saling menimpa README.
+  group: readme-updater
+  cancel-in-progress: false
 
 jobs:
   update-repo:
