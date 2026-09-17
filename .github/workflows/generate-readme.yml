@@ -5,8 +5,8 @@ permissions:
 
 on:
   schedule:
-    # Setiap 30 menit, offset 8 (menit 08 dan 38).
-    - cron: '8-59/30 * * * *'
+    # setiap 10 menit
+    - cron: '8-59/10 * * * *'
   push:
     branches:
       - main

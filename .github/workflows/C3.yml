@@ -5,8 +5,8 @@ permissions:
 
 on:
   schedule:
-    # Setiap 30 menit, offset 4 (menit 04 dan 34).
-    - cron: '4-59/30 * * * *'
+    # setiap 10 menit
+    - cron: '4-59/10 * * * *'
   workflow_dispatch:
     inputs:
       force_regenerate:
