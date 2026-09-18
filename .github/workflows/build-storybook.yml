@@ -24,13 +24,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.BUILD_STORYBOOK_AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 50
 
       # Cache npm dependencies to speed up the workflow
       - name: Cache node modules
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
           cache-name: cache-newIDE-app-node_modules
         with:
