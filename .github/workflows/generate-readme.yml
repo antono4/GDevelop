@@ -7,13 +7,6 @@ on:
   schedule:
     # Setiap 30 menit, offset 8 (menit 08 dan 38).
     - cron: '8-59/30 * * * *'
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/generate-readme.yml'
-      - 'index.html'
-      - 'README.md'
   workflow_dispatch:
     inputs:
       force_regenerate:
@@ -36,10 +29,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
 
       - name: Analyze repository structure
         id: analyze
@@ -240,17 +229,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           export TZ="Asia/Jakarta"
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_MSG="docs: auto-generate README at $(date +'%Y-%m-%d %H:%M:%S') WIB"
+          CONTENT="$(cat README.md)"
 
-          # Stage dulu agar working tree bersih sebelum pull --rebase
-          git add README.md
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "origin/$BRANCH"
+            printf '%s\n' "$CONTENT" > README.md
+            git add README.md
+            if git diff --staged --quiet; then
+              echo "README sudah terbaru, tidak ada perubahan."
+              exit 0
+            fi
 
-          if git diff --staged --quiet; then
-            echo "Tidak ada perubahan pada README."
-          else
-            git commit -m "docs: auto-generate README at $(date +'%Y-%m-%d %H:%M:%S') WIB"
-            # Pull --rebase aman karena perubahan sudah di-commit (tree bersih)
-            git pull --rebase origin ${{ github.ref_name }}
-            git push origin ${{ github.ref_name }}
-            echo "README berhasil diperbarui!"
-          fi
+            git commit --quiet -m "$COMMIT_MSG"
+            if git push --quiet origin "HEAD:$BRANCH"; then
+              echo "README diperbarui pada percobaan $attempt."
+              exit 0
+            fi
+            echo "Push ditolak, mencoba lagi (percobaan $attempt)."
+            sleep $((attempt * 2))
+          done
+
+          echo "Gagal push README setelah 5 percobaan." >&2
+          exit 1

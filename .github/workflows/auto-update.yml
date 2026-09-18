@@ -10,13 +10,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Grup yang sama dengan C1/C2/C3 -> run mengantre, tidak saling menimpa README.
+  # Semua workflow penulis README berbagi grup ini agar tidak saling bentrok.
   group: readme-updater
   cancel-in-progress: false
 
 jobs:
   update-repo:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
@@ -27,13 +28,39 @@ jobs:
           git config user.email "antonockr1@gmail.com"
 
       - name: Update README with timestamp
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git pull --rebase origin ${{ github.ref_name }}
+          set -euo pipefail
           export TZ="Asia/Jakarta"
+          BRANCH="${{ github.ref_name }}"
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
-          if [ -f README.md ]; then
-            echo "Last updated: $TIMESTAMP" >> README.md
-          fi
-          git add README.md 2>/dev/null || true
-          git commit -m "Auto update at $(date +'%Y-%m-%d %H:%M:%S') WIB" || echo "No changes"
-          git push origin ${{ github.ref_name }}
+          MSG="Auto update at $(date +'%Y-%m-%d %H:%M:%S') WIB"
+
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "origin/$BRANCH"
+
+            [ -f README.md ] || : > README.md
+            # Buang stempel waktu lama agar tidak menumpuk, lalu tulis yang baru.
+            grep -v '^Last updated: ' README.md > README.tmp || true
+            mv README.tmp README.md
+            printf 'Last updated: %s\n' "$TIMESTAMP" >> README.md
+
+            git add README.md
+            if git diff --staged --quiet; then
+              echo "Tidak ada perubahan pada README."
+              exit 0
+            fi
+
+            git commit --quiet -m "$MSG"
+            if git push --quiet origin "HEAD:$BRANCH"; then
+              echo "Push berhasil pada percobaan $attempt."
+              exit 0
+            fi
+            echo "Push ditolak, mencoba lagi (percobaan $attempt)."
+            sleep $((attempt * 2))
+          done
+
+          echo "Gagal push setelah 5 percobaan." >&2
+          exit 1

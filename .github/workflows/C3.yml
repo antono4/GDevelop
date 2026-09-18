@@ -29,10 +29,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '22'
 
       - name: Analyze repository structure
         id: analyze
@@ -169,15 +165,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git add README.md
+          set -euo pipefail
+          export TZ="Asia/Jakarta"
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_MSG="docs: Auto-generate README at $(date +'%Y-%m-%d %H:%M:%S') WIB"
+          CONTENT="$(cat README.md)"
 
-          if git diff --staged --quiet; then
-            echo "No changes to README"
-          else
-            export TZ="Asia/Jakarta"
-            COMMIT_MSG="docs: Auto-generate README at $(date +'%Y-%m-%d %H:%M:%S') WIB"
-            git commit -m "$COMMIT_MSG"
-            git pull --rebase origin ${{ github.ref_name }}
-            git push origin ${{ github.ref_name }}
-            echo "README updated!"
-          fi
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "origin/$BRANCH"
+            printf '%s\n' "$CONTENT" > README.md
+            git add README.md
+            if git diff --staged --quiet; then
+              echo "README sudah terbaru, tidak ada perubahan."
+              exit 0
+            fi
+
+            git commit --quiet -m "$COMMIT_MSG"
+            if git push --quiet origin "HEAD:$BRANCH"; then
+              echo "README diperbarui pada percobaan $attempt."
+              exit 0
+            fi
+            echo "Push ditolak, mencoba lagi (percobaan $attempt)."
+            sleep $((attempt * 2))
+          done
+
+          echo "Gagal push README setelah 5 percobaan." >&2
+          exit 1

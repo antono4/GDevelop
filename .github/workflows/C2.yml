@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  # Grup yang sama dengan C1/C3 -> run akan mengantre, tidak saling menimpa README.
+  # Semua workflow penulis README berbagi grup ini agar tidak saling bentrok.
   group: readme-updater
   cancel-in-progress: false
 
@@ -31,10 +31,36 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           export TZ="Asia/Jakarta"
+          BRANCH="${{ github.ref_name }}"
           TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
-          echo "Last updated: $TIMESTAMP" > README.md
-          git add README.md
-          git commit -m "Auto update README at $(date +'%Y-%m-%d %H:%M:%S') WIB" || echo "No changes to commit"
-          git pull --rebase origin ${{ github.ref_name }}
-          git push origin ${{ github.ref_name }}
+          MSG="Auto update README at $(date +'%Y-%m-%d %H:%M:%S') WIB"
+
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin "$BRANCH"
+            git reset --quiet --hard "origin/$BRANCH"
+
+            [ -f README.md ] || : > README.md
+            # Buang stempel waktu lama agar tidak menumpuk, lalu tulis yang baru.
+            grep -v '^Last updated: ' README.md > README.tmp || true
+            mv README.tmp README.md
+            printf 'Last updated: %s\n' "$TIMESTAMP" >> README.md
+
+            git add README.md
+            if git diff --staged --quiet; then
+              echo "Tidak ada perubahan pada README."
+              exit 0
+            fi
+
+            git commit --quiet -m "$MSG"
+            if git push --quiet origin "HEAD:$BRANCH"; then
+              echo "Push berhasil pada percobaan $attempt."
+              exit 0
+            fi
+            echo "Push ditolak, mencoba lagi (percobaan $attempt)."
+            sleep $((attempt * 2))
+          done
+
+          echo "Gagal push setelah 5 percobaan." >&2
+          exit 1
