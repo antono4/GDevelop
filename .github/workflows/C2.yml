@@ -5,8 +5,8 @@ permissions:
 
 on:
   schedule:
-    # Setiap 30 menit, offset 2 (menit 02 dan 32).
-    - cron: '2-59/30 * * * *'
+    # Setiap 10 menit, offset 1 (menit 01, 11, 21, 31, 41, 51).
+    - cron: '1-59/10 * * * *'
   workflow_dispatch:
 
 concurrency:
